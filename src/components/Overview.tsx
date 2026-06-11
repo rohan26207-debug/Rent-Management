@@ -16,9 +16,10 @@ interface OverviewProps {
   ledger: LedgerEntry[];
   expenses: PropertyExpense[];
   onNavigate: (view: string, targetId?: string) => void;
+  currency: string;
 }
 
-export default function Overview({ tenants, ledger, expenses, onNavigate }: OverviewProps) {
+export default function Overview({ tenants, ledger, expenses, onNavigate, currency }: OverviewProps) {
   // Calculations
   const activeTenants = tenants.filter(t => t.isActive);
   const totalRooms = 12; // Sample limit
@@ -110,7 +111,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
           </div>
           <p className="text-slate-500 text-xs font-medium mt-4 uppercase tracking-wider">Payments Collected</p>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-bold font-mono text-slate-900">${totalPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-2xl font-bold font-mono text-slate-900">{currency}{totalPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <p className="text-emerald-600 text-xs font-semibold mt-3 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
             View finance statements &rarr;
@@ -132,7 +133,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
           </div>
           <p className="text-slate-500 text-xs font-medium mt-4 uppercase tracking-wider">Unresolved Balance</p>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-bold font-mono text-amber-600">${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-2xl font-bold font-mono text-amber-600">{currency}{totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <p className="text-amber-600 text-xs font-semibold mt-3 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
             Collect outstanding balances &rarr;
@@ -154,7 +155,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
           </div>
           <p className="text-slate-500 text-xs font-medium mt-4 uppercase tracking-wider">Property Expenses</p>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-bold font-mono text-slate-900">${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-2xl font-bold font-mono text-slate-900">{currency}{totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <p className="text-rose-600 text-xs font-semibold mt-3 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
             View expense journal &rarr;
@@ -174,7 +175,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
             <div>
               <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
                 <span>Charges Generated (Dues Invoiced)</span>
-                <span className="font-mono font-bold">${totalCharges.toFixed(2)}</span>
+                <span className="font-mono font-bold">{currency}{totalCharges.toFixed(2)}</span>
               </div>
               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
                 <div className="bg-indigo-600 h-full rounded-full transition-all duration-500" style={{ width: '100%' }}></div>
@@ -185,7 +186,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
             <div>
               <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span>Payments Cash-in</span>
-                <span className="font-mono font-bold text-emerald-600">${totalPayments.toFixed(2)}</span>
+                <span className="font-mono font-bold text-emerald-600">{currency}{totalPayments.toFixed(2)}</span>
               </div>
               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
                 <div 
@@ -203,7 +204,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
             <div>
               <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-rose-500 inline-block"></span>Out-of-Pocket Expenses</span>
-                <span className="font-mono font-bold text-rose-600">${totalExpenses.toFixed(2)}</span>
+                <span className="font-mono font-bold text-rose-600">{currency}{totalExpenses.toFixed(2)}</span>
               </div>
               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
                 <div 
@@ -221,12 +222,12 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
           <div className="mt-8 pt-5 border-t border-slate-100 grid grid-cols-2 gap-4 text-center">
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
               <p className="text-[11px] text-slate-500 font-medium">SECURITY DEPOSITS HELD</p>
-              <p className="text-lg font-bold text-slate-800 tracking-tight font-mono mt-0.5">${totalDeposits.toFixed(2)}</p>
+              <p className="text-lg font-bold text-slate-800 tracking-tight font-mono mt-0.5">{currency}{totalDeposits.toFixed(2)}</p>
             </div>
             <div className={`p-3 rounded-xl border ${netCashFlow >= 0 ? "bg-emerald-50/50 border-emerald-100" : "bg-rose-50/50 border-rose-100"}`}>
               <p className="text-[11px] text-slate-500 font-medium">NET CASH BALANCE</p>
               <p className={`text-lg font-bold tracking-tight font-mono mt-0.5 ${netCashFlow >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                ${netCashFlow.toFixed(2)}
+                {currency}{netCashFlow.toFixed(2)}
               </p>
             </div>
           </div>
@@ -249,7 +250,7 @@ export default function Overview({ tenants, ledger, expenses, onNavigate }: Over
                       <span className="capitalize font-sans font-medium text-slate-700">{cat}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-slate-800 font-bold font-mono">${amount.toFixed(2)}</span>
+                      <span className="text-slate-800 font-bold font-mono">{currency}{amount.toFixed(2)}</span>
                       <span className="text-slate-400 text-[10px] ml-1">({percent}%)</span>
                     </div>
                   </div>

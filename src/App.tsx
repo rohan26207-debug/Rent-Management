@@ -83,6 +83,11 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncStatusText, setSyncStatusText] = useState<string>("");
 
+  // Global Currency State (Default to Rupee per user request)
+  const [currency, setCurrency] = useState<string>(() => {
+    return localStorage.getItem("rm_currency") || "₹";
+  });
+
   // Track if Firebase loaded initially to prevent intermediate empty states
   const [firebaseInitialized, setFirebaseInitialized] = useState<boolean>(false);
 
@@ -490,7 +495,7 @@ export default function App() {
       type: "charge",
       category: "electricity",
       amount: reading.amount,
-      description: `Electricity reading charge [${reading.billingMonth}]: ${reading.unitsConsumed} unit(s) consumed. Reading ${reading.previousReading} -> ${reading.currentReading} @ $${reading.ratePerUnit}/unit`,
+      description: `Electricity reading charge [${reading.billingMonth}]: ${reading.unitsConsumed} unit(s) consumed. Reading ${reading.previousReading} -> ${reading.currentReading} @ ${currency}${reading.ratePerUnit}/unit`,
     };
 
     setLedger(prev => [chargeEntry, ...prev]);
@@ -572,7 +577,7 @@ export default function App() {
             amount: tenant.depositPaid,
             status: tenant.depositStatus
           },
-          ledgerSummary: `The total ledger outstanding is $${outstanding.toFixed(2)}. Unposted electric invoice stands at $${unpostedElec.toFixed(2)}.`
+          ledgerSummary: `The total ledger outstanding is ${currency}${outstanding.toFixed(2)}. Unposted electric invoice stands at ${currency}${unpostedElec.toFixed(2)}.`
         })
       });
 
@@ -730,6 +735,19 @@ export default function App() {
             <BellRing className="w-4 h-4" />
             AI rent reminders
           </button>
+
+          <button
+            onClick={() => handleNavigate("settings")}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "settings" 
+                ? "bg-indigo-600 text-white shadow-sm" 
+                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+            }`}
+            id="settings-tab-btn"
+          >
+            <Settings className="w-4 h-4" />
+            System Settings
+          </button>
         </nav>
 
         {/* Footer info box */}
@@ -861,6 +879,7 @@ export default function App() {
               ledger={ledger} 
               expenses={expenses} 
               onNavigate={handleNavigate} 
+              currency={currency}
             />
           )}
 
@@ -915,7 +934,7 @@ export default function App() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold font-mono text-slate-800">${t.depositPaid.toFixed(2)}</span>
+                              <span className="font-bold font-mono text-slate-800">{currency}{t.depositPaid.toFixed(2)}</span>
                               <span className={`text-[9px] font-bold uppercase rounded-md px-1.5 py-0.5 border ${
                                 t.depositStatus === 'Paid' 
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
@@ -931,7 +950,7 @@ export default function App() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="font-bold text-slate-800 font-mono">${t.rentAmount.toFixed(2)}/mo</div>
+                            <div className="font-bold text-slate-800 font-mono">{currency}{t.rentAmount.toFixed(2)}/mo</div>
                             <div className="text-[10px] text-slate-400">
                               Lease: {t.leaseStart} to {t.leaseEnd}
                             </div>
@@ -939,15 +958,15 @@ export default function App() {
                           <td className="px-6 py-4">
                             <div className={`font-semibold font-mono text-xs ${t.currentBalance > 0 ? "text-amber-600" : t.currentBalance < 0 ? "text-emerald-600" : "text-slate-500"}`}>
                               {t.currentBalance > 0 
-                                ? `Due $${t.currentBalance.toFixed(2)}` 
+                                ? `Due ${currency}${t.currentBalance.toFixed(2)}` 
                                 : t.currentBalance < 0 
-                                  ? `Overpaid $${Math.abs(t.currentBalance).toFixed(2)}` 
+                                  ? `Overpaid ${currency}${Math.abs(t.currentBalance).toFixed(2)}` 
                                   : "Fully Cleared"
                               }
                             </div>
                             {t.unpostedElectric > 0 && (
                               <div className="text-[10px] text-indigo-500 font-semibold font-mono mt-0.5 flex items-center gap-0.5">
-                                <Zap className="h-2.5 w-2.5" /> +${t.unpostedElectric.toFixed(2)} electricity pending
+                                <Zap className="h-2.5 w-2.5" /> +{currency}{t.unpostedElectric.toFixed(2)} electricity pending
                               </div>
                             )}
                           </td>
@@ -1080,7 +1099,7 @@ export default function App() {
                           <td className={`px-6 py-4 text-right font-bold font-mono ${
                             item.type === "charge" ? "text-amber-600" : "text-emerald-600"
                           }`}>
-                            {item.type === "charge" ? "+" : "-"}${item.amount.toFixed(2)}
+                            {item.type === "charge" ? "+" : "-"}{currency}{item.amount.toFixed(2)}
                           </td>
                         </tr>
                       );
@@ -1106,7 +1125,7 @@ export default function App() {
                 <Info className="h-5 w-5 text-sky-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-600 space-y-1">
                   <h4 className="font-bold text-slate-800">Sub-Meter Electricity Tracking Guidance</h4>
-                  <p>Each room has a digital electricity meter. To calculate billing correctly, periodically input reading values here. Usage units consume energy relative to the renter's defined rate per unit ($/kWh).</p>
+                  <p>Each room has a digital electricity meter. To calculate billing correctly, periodically input reading values here. Usage units consume energy relative to the renter's defined rate per unit ({currency}/kWh).</p>
                   <p className="font-semibold text-indigo-700">Once recorded, make sure to click "Post to Ledger" to charge the tenant's invoice account balance.</p>
                 </div>
               </div>
@@ -1124,7 +1143,7 @@ export default function App() {
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-slate-400 font-bold uppercase">Rate</p>
-                          <p className="text-xs font-bold font-mono text-slate-700">${t.electricityRate}/kWh</p>
+                          <p className="text-xs font-bold font-mono text-slate-700">{currency}{t.electricityRate}/kWh</p>
                         </div>
                       </div>
 
@@ -1189,7 +1208,7 @@ export default function App() {
                             <td className="px-6 py-3 text-slate-600">{r.previousReading} kWh</td>
                             <td className="px-6 py-3 text-slate-800">{r.currentReading} kWh</td>
                             <td className="px-6 py-3 font-semibold text-slate-700">+{r.unitsConsumed} unit(s)</td>
-                            <td className="px-6 py-3 font-bold text-indigo-700">${r.amount.toFixed(2)}</td>
+                            <td className="px-6 py-3 font-bold text-indigo-700">{currency}{r.amount.toFixed(2)}</td>
                             <td className="px-6 py-3 text-right">
                               {r.isPostedToLedger ? (
                                 <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-md px-2 py-1 border border-emerald-150 inline-flex items-center gap-1">
@@ -1231,7 +1250,7 @@ export default function App() {
                     <p className="text-xs text-slate-500">Record maintenance hardware cost, taxes, utilities, and locks.</p>
                   </div>
                   <div className="text-xs text-slate-500 font-semibold font-mono">
-                    Total Overhead Outlay: ${expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                    Total Overhead Outlay: {currency}{expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                   </div>
                 </div>
 
@@ -1267,8 +1286,8 @@ export default function App() {
                           <td className="px-6 py-4 font-sans text-slate-600">
                             {e.paidTo}
                           </td>
-                          <td className="px-6 py-4 text-right font-bold text-rose-600">
-                            -${e.amount.toFixed(2)}
+                          <td className="px-6 py-4 text-right font-bold text-rose-600 font-mono">
+                            -{currency}{e.amount.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -1339,8 +1358,8 @@ export default function App() {
                             </div>
                             
                             <div className="flex gap-4 mt-2 text-[11px] text-slate-500 font-mono">
-                              <span>Rent: <b>${rentBasis}</b></span>
-                              <span>Ledger Bal: <b className={balance > 0 ? "text-amber-600" : "text-emerald-600"}>${balance.toFixed(2)}</b></span>
+                              <span>Rent: <b>{currency}{rentBasis}</b></span>
+                              <span>Ledger Bal: <b className={balance > 0 ? "text-amber-600" : "text-emerald-600"}>{currency}{balance.toFixed(2)}</b></span>
                             </div>
                           </div>
 
@@ -1394,23 +1413,23 @@ export default function App() {
                       <div className="bg-indigo-50/50 p-3 rounded-lg text-[11px] text-slate-700 space-y-1 font-mono">
                         <div className="flex justify-between">
                           <span>Computed Rent:</span>
-                          <span>${activeReminderDraft.rentDue.toFixed(2)}</span>
+                          <span>{currency}{activeReminderDraft.rentDue.toFixed(2)}</span>
                         </div>
                         {activeReminderDraft.electricityDue > 0 && (
                           <div className="flex justify-between text-indigo-700 font-semibold">
                             <span>Electricity sub-meter total:</span>
-                            <span>+${activeReminderDraft.electricityDue.toFixed(2)}</span>
+                            <span>+{currency}{activeReminderDraft.electricityDue.toFixed(2)}</span>
                           </div>
                         )}
                         {activeReminderDraft.otherDue > 0 && (
                           <div className="flex justify-between">
                             <span>Other balance adjustments:</span>
-                            <span>+${activeReminderDraft.otherDue.toFixed(2)}</span>
+                            <span>+{currency}{activeReminderDraft.otherDue.toFixed(2)}</span>
                           </div>
                         )}
                         <div className="border-t border-indigo-100/80 my-1 pt-1 flex justify-between font-bold text-xs text-slate-850">
                           <span>Total Statement Balance:</span>
-                          <span>${activeReminderDraft.totalDue.toFixed(2)}</span>
+                          <span>{currency}{activeReminderDraft.totalDue.toFixed(2)}</span>
                         </div>
                       </div>
 
@@ -1459,6 +1478,87 @@ export default function App() {
                   )}
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {/* SYSTEM SETTINGS SCREEN */}
+          {activeTab === "settings" && (
+            <div className="space-y-6" id="settings-screen">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-6 animate-fadeIn">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">System Preferences</h3>
+                  <p className="text-xs text-slate-500">Configure global app options, preferred currencies, and cloud connectivity.</p>
+                </div>
+
+                <div className="border-t border-slate-100 pt-6 space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-2">Global Currency Preference</label>
+                    <p className="text-slate-500 text-xs mb-3">Select the default currency symbol utilized across the dashboard, financial statements, and receipts.</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { symbol: "₹", name: "Indian Rupee (₹)", code: "INR" },
+                        { symbol: "$", name: "US Dollar ($)", code: "USD" },
+                        { symbol: "€", name: "Euro (€)", code: "EUR" },
+                        { symbol: "£", name: "British Pound (£)", code: "GBP" },
+                        { symbol: "¥", name: "Yen (¥)", code: "JPY" },
+                        { symbol: "AED", name: "UAE Dirham (AED)", code: "AED" },
+                        { symbol: "A$", name: "Australian Dollar (A$)", code: "AUD" },
+                        { symbol: "C$", name: "Canadian Dollar (C$)", code: "CAD" },
+                      ].map((curr) => (
+                        <button
+                          key={curr.symbol}
+                          onClick={() => {
+                            setCurrency(curr.symbol);
+                            localStorage.setItem("rm_currency", curr.symbol);
+                          }}
+                          className={`p-4 rounded-xl border text-left font-sans transition-all flex flex-col justify-between h-24 ${
+                            currency === curr.symbol
+                              ? "bg-indigo-50 border-indigo-600 text-indigo-950 font-bold shadow-xs scale-[1.02]"
+                              : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 font-medium"
+                          }`}
+                          id={`currency-btn-${curr.code}`}
+                        >
+                          <span className="text-xl font-mono block font-bold">{curr.symbol}</span>
+                          <div>
+                            <span className="text-[11px] block tracking-tight">{curr.name}</span>
+                            <span className="text-[8.5px] font-mono text-slate-400 block uppercase">{curr.code}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-150 space-y-2 mt-4 font-mono text-xs">
+                    <p className="font-sans font-bold text-slate-705 text-slate-700">Preview Layout (Real-time formatting):</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                        <span className="text-[10px] text-slate-400 block font-sans">Monthly Rent</span>
+                        <span className="text-sm font-bold text-slate-800">{currency}12,500.00</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                        <span className="text-[10px] text-slate-400 block font-sans">Overdue Balance</span>
+                        <span className="text-sm font-bold text-amber-600">Due {currency}350.00</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                        <span className="text-[10px] text-slate-400 block font-sans">Collected Funds</span>
+                        <span className="text-sm font-bold text-emerald-600">{currency}85,200.00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {user && (
+                    <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl flex items-start gap-3 mt-6">
+                      <Cloud className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5 animate-pulse" />
+                      <div>
+                        <h4 className="font-bold text-emerald-950 text-xs">Cloud Preference Protection</h4>
+                        <p className="text-[11px] text-slate-600 leading-relaxed mt-0.5">
+                          Settings preferences are stored locally and will sync as the baseline for room accounts managed under <strong>{user?.email}</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1535,7 +1635,7 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Monthly Rent Basis ($/mo)</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Monthly Rent Basis ({currency}/mo)</label>
                   <input 
                     type="number"
                     required
@@ -1545,7 +1645,7 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Sub-meter Electricity Rate ($/kWh)</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Sub-meter Electricity Rate ({currency}/kWh)</label>
                   <input 
                     type="number"
                     step="0.01"
@@ -1561,7 +1661,7 @@ export default function App() {
               <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Deposit Paid Amount ($)</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Deposit Paid Amount ({currency})</label>
                     <input 
                       type="number"
                       value={tenantFormData.depositPaid}
@@ -1724,7 +1824,7 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Transaction Amount ($)</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Transaction Amount ({currency})</label>
                   <input 
                     type="number"
                     step="0.01"
@@ -1930,7 +2030,7 @@ export default function App() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Debit Cash Amount ($)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Debit Cash Amount ({currency})</label>
                 <input 
                   type="number"
                   step="0.01"
