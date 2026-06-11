@@ -562,9 +562,13 @@ export default function App() {
 
     const otherDue = Math.max(0, outstanding - rentDue - unpostedElec);
 
-    // Fetch from local node server route
+    // Fetch from local node server route (fallback to cloud host when running under android container)
     try {
-      const response = await fetch("/api/reminders/generate-draft", {
+      const isCapacitor = typeof window !== "undefined" && (window as any).Capacitor;
+      const apiBase = isCapacitor 
+        ? "https://ais-pre-k5vq6a25wn26qwo35tuvh6-969939221440.asia-southeast1.run.app" 
+        : "";
+      const response = await fetch(`${apiBase}/api/reminders/generate-draft`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

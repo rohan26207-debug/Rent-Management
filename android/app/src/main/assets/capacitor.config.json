@@ -1,0 +1,5 @@
+{
+	"appId": "com.rentmanagement.app",
+	"appName": "Rent Management",
+	"webDir": "dist"
+}
