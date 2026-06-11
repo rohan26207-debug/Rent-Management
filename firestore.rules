@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Catch-all / Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Main Helper validation functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation blueprints for entities
+    function isValidTenant(data) {
+      return data.keys().hasAll(['id', 'name', 'roomNumber', 'rentAmount', 'depositPaid', 'depositStatus', 'leaseStart', 'leaseEnd', 'isActive', 'electricityRate', 'lastMeterReading'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && data.roomNumber is string && data.roomNumber.size() <= 64
+        && data.rentAmount is number && data.rentAmount >= 0
+        && data.depositPaid is number && data.depositPaid >= 0
+        && data.depositStatus is string && data.depositStatus in ['Paid', 'Refunded', 'Partial']
+        && data.leaseStart is string && data.leaseStart.size() <= 64
+        && data.leaseEnd is string && data.leaseEnd.size() <= 64
+        && data.isActive is bool
+        && data.electricityRate is number
+        && data.lastMeterReading is number;
+    }
+
+    function isValidLedgerEntry(data) {
+      return data.keys().hasAll(['id', 'tenantId', 'date', 'type', 'category', 'amount', 'description'])
+        && data.id is string && data.id.size() <= 128
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.date is string && data.date.size() <= 64
+        && data.type is string && data.type in ['charge', 'payment']
+        && data.category is string && data.category in ['rent', 'electricity', 'deposit', 'maintenance', 'other']
+        && data.amount is number && data.amount >= 0
+        && data.description is string && data.description.size() <= 1024;
+    }
+
+    function isValidReading(data) {
+      return data.keys().hasAll(['id', 'tenantId', 'readingDate', 'previousReading', 'currentReading', 'unitsConsumed', 'ratePerUnit', 'amount', 'billingMonth', 'isPostedToLedger'])
+        && data.id is string && data.id.size() <= 128
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.readingDate is string && data.readingDate.size() <= 64
+        && data.previousReading is number
+        && data.currentReading is number
+        && data.unitsConsumed is number
+        && data.ratePerUnit is number
+        && data.amount is number
+        && data.billingMonth is string && data.billingMonth.size() <= 64
+        && data.isPostedToLedger is bool;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll(['id', 'date', 'category', 'amount', 'description', 'paidTo'])
+        && data.id is string && data.id.size() <= 128
+        && data.date is string && data.date.size() <= 64
+        && data.category is string && data.category in ['maintenance', 'repairs', 'utilities', 'taxes', 'insurance', 'other']
+        && data.amount is number && data.amount >= 0
+        && data.description is string && data.description.size() <= 1024
+        && data.paidTo is string && data.paidTo.size() <= 256;
+    }
+
+    // Nested structures
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // --- TENANTS COLLECTION ---
+      match /tenants/{tenantId} {
+        allow read, list, get: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(tenantId)
+          && isValidTenant(request.resource.data);
+        allow update: if isOwner(userId)
+          && isValidTenant(request.resource.data)
+          && request.resource.data.id == resource.data.id;
+        allow delete: if isOwner(userId);
+      }
+
+      // --- LEDGER COLLECTION ---
+      match /ledger/{ledgerId} {
+        allow read, list, get: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(ledgerId)
+          && isValidLedgerEntry(request.resource.data);
+        allow update: if isOwner(userId)
+          && isValidLedgerEntry(request.resource.data)
+          && request.resource.data.id == resource.data.id;
+        allow delete: if isOwner(userId);
+      }
+
+      // --- READINGS COLLECTION ---
+      match /readings/{readingId} {
+        allow read, list, get: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(readingId)
+          && isValidReading(request.resource.data);
+        allow update: if isOwner(userId)
+          && isValidReading(request.resource.data)
+          && request.resource.data.id == resource.data.id;
+        allow delete: if isOwner(userId);
+      }
+
+      // --- EXPENSES COLLECTION ---
+      match /expenses/{expenseId} {
+        allow read, list, get: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(expenseId)
+          && isValidExpense(request.resource.data);
+        allow update: if isOwner(userId)
+          && isValidExpense(request.resource.data)
+          && request.resource.data.id == resource.data.id;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

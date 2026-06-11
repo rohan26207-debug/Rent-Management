@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "Tenant": {
+      "title": "Tenant",
+      "description": "Details about a tenant, room allocation, active status and lease settings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "rentAmount": { "type": "number" },
+        "depositPaid": { "type": "number" },
+        "depositNotes": { "type": "string" },
+        "depositStatus": { "type": "string", "enum": ["Paid", "Refunded", "Partial"] },
+        "leaseStart": { "type": "string" },
+        "leaseEnd": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "electricityRate": { "type": "number" },
+        "lastMeterReading": { "type": "number" }
+      },
+      "required": ["id", "name", "roomNumber", "rentAmount", "depositPaid", "depositStatus", "leaseStart", "leaseEnd", "isActive", "electricityRate", "lastMeterReading"]
+    },
+    "LedgerEntry": {
+      "title": "LedgerEntry",
+      "description": "Financial ledger transactions including charges and payments.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string", "enum": ["charge", "payment"] },
+        "category": { "type": "string", "enum": ["rent", "electricity", "deposit", "maintenance", "other"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "referenceNo": { "type": "string" }
+      },
+      "required": ["id", "tenantId", "date", "type", "category", "amount", "description"]
+    },
+    "ElectricityReading": {
+      "title": "ElectricityReading",
+      "description": "Electricity power meter readings and consumption logs per tenant.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "readingDate": { "type": "string" },
+        "previousReading": { "type": "number" },
+        "currentReading": { "type": "number" },
+        "unitsConsumed": { "type": "number" },
+        "ratePerUnit": { "type": "number" },
+        "amount": { "type": "number" },
+        "billingMonth": { "type": "string" },
+        "isPostedToLedger": { "type": "boolean" }
+      },
+      "required": ["id", "tenantId", "readingDate", "previousReading", "currentReading", "unitsConsumed", "ratePerUnit", "amount", "billingMonth", "isPostedToLedger"]
+    },
+    "PropertyExpense": {
+      "title": "PropertyExpense",
+      "description": "Property-wide expenditures, repairs and utility maintenance expenses.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string", "enum": ["maintenance", "repairs", "utilities", "taxes", "insurance", "other"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "paidTo": { "type": "string" }
+      },
+      "required": ["id", "date", "category", "amount", "description", "paidTo"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/tenants/{tenantId}": {
+      "schema": "Tenant",
+      "description": "Tenant documents for a specific property owner."
+    },
+    "/users/{userId}/ledger/{ledgerId}": {
+      "schema": "LedgerEntry",
+      "description": "Ledger records linked to the specific owner's properties."
+    },
+    "/users/{userId}/readings/{readingId}": {
+      "schema": "ElectricityReading",
+      "description": "Electricity readings for the specific owner's tenants."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "PropertyExpense",
+      "description": "General property maintenance expenses recorded by the owner."
+    }
+  }
+}

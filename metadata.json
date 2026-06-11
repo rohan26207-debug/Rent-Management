@@ -1,0 +1,6 @@
+{
+  "name": "Rent Management",
+  "description": "Premium rent, ledger, deposit, electricity meter, and automated AI rent reminders dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
